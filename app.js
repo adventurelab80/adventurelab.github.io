@@ -1,55 +1,64 @@
 let mpData = [];
 
-// Load CSV on startup
+// Load CSV
 fetch("mp_pcd_sector.csv")
-  .then(response => response.text())
-  .then(csvText => {
-    Papa.parse(csvText, {
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        mpData = results.data; 
-        console.log("CSV loaded:", mpData.length);
-      }
+    .then(res => res.text())
+    .then(csv => {
+        Papa.parse(csv, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                mpData = results.data;
+                console.log("MP data loaded:", mpData.length);
+            }
+        });
     });
-  });
 
-// Search button click
+// Find MP
 document.getElementById("searchBtn").addEventListener("click", () => {
-  const outcode = document.getElementById("postcodeInput").value.trim().toUpperCase();
-  if (!outcode) return;
+    const input = document.getElementById("postcodeInput").value
+        .trim()
+        .toUpperCase();
 
-  // Filter CSV for matching sector
-  const matches = mpData.filter(row => 
-    row["Postcode_Sector"] && 
-    row["Postcode_Sector"].startsWith(outcode)
-  );
+    if (!input) return;
 
-  const select = document.getElementById("mpSelect");
-  select.innerHTML = ""; // clear out old options
+    const matches = mpData.filter(row =>
+        row.Postcode_Sector &&
+        row.Postcode_Sector.startsWith(input)
+    );
 
-  if (matches.length === 0) {
-    select.innerHTML = "<option>No matches found</option>";
-  } else {
-    matches.forEach(row => {
-      const option = document.createElement("option");
-      option.value = row["Westminster Parliamentary Constituency Code (2024)"];
-      option.text = `${row["Constituency Name"]} — ${row["MP Name"]}`;
-      select.appendChild(option);
-    });
-  }
+    const select = document.getElementById("mpSelect");
+    select.innerHTML = "";
 
-  document.getElementById("resultSection").style.display = "block";
+    if (matches.length === 0) {
+        select.innerHTML = "<option>No MP found for this postcode</option>";
+    } else {
+        matches.forEach(row => {
+            const opt = document.createElement("option");
+            opt.value = row["Westminster Parliamentary Constituency Code (2024)"];
+            opt.textContent = `${row["Constituency Name"]} — ${row["MP Name"]}`;
+            select.appendChild(opt);
+        });
+    }
+
+    document.getElementById("result").style.display = "block";
 });
 
-// Send / Generate email button
+// Generate email
 document.getElementById("sendBtn").addEventListener("click", () => {
-  const select = document.getElementById("mpSelect");
-  const emailBody = document.getElementById("emailBody").value.trim();
-  const selectedOption = select.options[select.selectedIndex];
-  if (!selectedOption) return;
+    const select = document.getElementById("mpSelect");
+    const body = document.getElementById("emailBody").value;
 
-  const mpName = selectedOption.text.split("—")[1]?.trim();
-  const mailtoLink = `mailto:?subject=Message to ${mpName}&body=${encodeURIComponent(emailBody)}`;
-  window.location.href = mailtoLink;
+    if (!select.value) return;
+
+    const mpName = select.options[select.selectedIndex]
+        .text.split("—")[1]
+        .trim();
+
+    const subject = `Concern from a constituent`;
+    const emailBody = `Dear ${mpName},\n\n${body}\n\nYours sincerely,`;
+
+    window.location.href =
+        `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 });
+
