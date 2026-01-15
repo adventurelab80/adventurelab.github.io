@@ -6,23 +6,33 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div class="container">
     <h1>Find Your MP</h1>
 
-    <label for="postcodeInput">Enter postcode outcode (e.g., AB1):</label>
-    <input type="text" id="postcodeInput" placeholder="AB1">
-    <button id="searchBtn">Search</button>
+    <div class="form-container">
+        <label for="postcodeInput">Enter first part of your postcode</label>
+        <input type="text" id="postcodeInput" placeholder="e.g. SW1A">
 
-    <div id="resultSection" style="display:none;">
-        <h2>Select your constituency/MP</h2>
-        <select id="mpSelect"></select>
-
-        <h3>Email your MP</h3>
-        <textarea id="emailBody" placeholder="Your message here"></textarea>
-        <button id="sendBtn">Generate Email</button>
+        <button id="searchBtn">Find MP</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.2.0/papaparse.min.js"></script>
-    <script src="app.js"></script>
+    <div id="result" style="display:none;">
+        <h2>Select your MP</h2>
+
+        <label for="mpSelect">Constituency & MP</label>
+        <select id="mpSelect"></select>
+
+        <label for="emailBody">Your message</label>
+        <textarea id="emailBody" rows="6"
+            placeholder="Write your message to your MP here..."></textarea>
+
+        <button id="sendBtn">Generate Email</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
-
