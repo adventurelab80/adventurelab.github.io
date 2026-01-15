@@ -48,6 +48,7 @@ fetch("mp_pcd_sector.csv")
             complete: (results) => {
                 mpData = results.data;
                 console.log("MP data loaded:", mpData.length);
+                console.log(mpData[0]); // log first row to check columns
             }
         });
     });
@@ -58,15 +59,11 @@ function extractSector(postcode) {
 
     // Full postcode e.g. PE280LF
     const full = clean.match(/^([A-Z]{1,2}\d{1,2})(\d)[A-Z]{2}$/);
-    if (full) {
-        return `${full[1]} ${full[2]}`;
-    }
+    if (full) return `${full[1]} ${full[2]}`;
 
     // Sector e.g. PE280 or PE28
     const sector = clean.match(/^([A-Z]{1,2}\d{1,2})(\d?)$/);
-    if (sector) {
-        return sector[2] ? `${sector[1]} ${sector[2]}` : sector[1];
-    }
+    if (sector) return sector[2] ? `${sector[1]} ${sector[2]}` : sector[1];
 
     return "";
 }
@@ -79,10 +76,10 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     const sector = extractSector(input);
     console.log("Searching for sector:", sector);
 
-    const matches = mpData.filter(row =>
-        row.Postcode_Sector &&
-        row.Postcode_Sector.toUpperCase().startsWith(sector)
-    );
+    const matches = mpData.filter(row => {
+        const csvSector = row["Postcode Sector"] || "";
+        return csvSector.toUpperCase().startsWith(sector);
+    });
 
     const select = document.getElementById("mpSelect");
     select.innerHTML = "";
@@ -92,8 +89,8 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     } else {
         matches.forEach(row => {
             const opt = document.createElement("option");
-            opt.value = row["Westminster Parliamentary Constituency Code (2024)"];
-            opt.textContent = `${row["Constituency Name"]} — ${row["MP Name"]}`;
+            opt.value = row["Email"]; // store email for mailto
+            opt.textContent = `${row["Constituency"]} — ${row["NameDisplay"]}`;
             select.appendChild(opt);
         });
     }
@@ -106,18 +103,19 @@ document.getElementById("sendBtn").addEventListener("click", () => {
     const select = document.getElementById("mpSelect");
     const body = document.getElementById("emailBody").value.trim();
 
-    if (!select.value) return;
+    if (!select.value || !body) return;
 
     const mpName = select.options[select.selectedIndex]
         .text.split("—")[1]
         .trim();
 
+    const mpEmail = select.value;
+
     const subject = "Concern from a constituent";
-    const emailBody =
-        `Dear ${mpName},\n\n${body}\n\nYours sincerely,`;
+    const emailBody = `Dear ${mpName},\n\n${body}\n\nYours sincerely,`;
 
     window.location.href =
-        `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        `mailto:${encodeURIComponent(mpEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 });
 </script>
 
