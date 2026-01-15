@@ -3,36 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <title>Find Your MP</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+        input, button, select, textarea {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+        }
+        #result {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Find Your MP</h1>
+<h2>Find Your MP</h2>
 
-    <div class="form-container">
-        <label for="postcodeInput">Enter first part of your postcode</label>
-        <input type="text" id="postcodeInput" placeholder="e.g. SW1A">
+<input id="postcodeInput" type="text" placeholder="Enter your postcode">
+<button id="searchBtn">Find MP</button>
 
-        <button id="searchBtn">Find MP</button>
-    </div>
+<div id="result">
+    <select id="mpSelect"></select>
 
-    <div id="result" style="display:none;">
-        <h2>Select your MP</h2>
-
-        <label for="mpSelect">Constituency & MP</label>
-        <select id="mpSelect"></select>
-
-        <label for="emailBody">Your message</label>
-        <textarea id="emailBody" rows="6"
-            placeholder="Write your message to your MP here..."></textarea>
-
-        <button id="sendBtn">Generate Email</button>
-    </div>
+    <textarea id="emailBody" rows="6" placeholder="Write your message"></textarea>
+    <button id="sendBtn">Email MP</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="app.js"></script>
+<script>
+let mpData = [];
+
+// Load CSV
+fetch("mp_pcd_sector.csv")
+    .then(res => res.text())
+    .then(csv => {
+        Papa.parse(csv, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                mpData = results.data;
+                console.log("MP data loaded:", mpData.length);
+            }
+        });
+    });
+
+// Convert postcode to sector
+function extractSector(postcode) {
+    const clean = postcode.toUpperCase().replace(/\s+/g, "");
+
+    // Full postcode e.g. PE280LF
+    const full = clean.match(/^([A-Z]{1,2}\d{1,2})(\d)[A-Z]{2}$/);
+    if (full) {
+        return `${full[1]} ${full[2]}`;
+    }
+
+    // Sector e.g. PE280 or PE28
+    const sector = clean.match(/^([A-Z]{1,2}\d{1,2})(\d?)$/);
+    if (sector) {
+        return sector[2] ? `${sector[1]} ${sector[2]}` : sector[1];
+    }
+
+    return "";
+}
+
+// Find MP
+document.getElementById("searchBtn").addEventListener("click", () => {
+    const input = document.getElementById("postcodeInput").value.trim();
+    if (!input) return;
+
+    const sector = extractSector(input);
+    console.log("Searching for sector:", sector);
+
+    const matches = mpData.filter(row =>
+        row.Postcode_Sector &&
+        row.Postcode_Sector.toUpperCase().startsWith(sector)
+    );
+
+    const select = document.getElementById("mpSelect");
+    select.innerHTML = "";
+
+    if (matches.length === 0) {
+        select.innerHTML = "<option>No MP found for this postcode</option>";
+    } else {
+        matches.forEach(row => {
+            const opt = document.createElement("option");
+            opt.value = row["Westminster Parliamentary Constituency Code (2024)"];
+            opt.textContent = `${row["Constituency Name"]} — ${row["MP Name"]}`;
+            select.appendChild(opt);
+        });
+    }
+
+    document.getElementById("result").style.display = "block";
+});
+
+// Generate email
+document.getElementById("sendBtn").addEventListener("click", () => {
+    const select = document.getElementById("mpSelect");
+    const body = document.getElementById("emailBody").value.trim();
+
+    if (!select.value) return;
+
+    const mpName = select.options[select.selectedIndex]
+        .text.split("—")[1]
+        .trim();
+
+    const subject = "Concern from a constituent";
+    const emailBody =
+        `Dear ${mpName},\n\n${body}\n\nYours sincerely,`;
+
+    window.location.href =
+        `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+});
+</script>
 
 </body>
 </html>
