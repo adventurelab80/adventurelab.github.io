@@ -1,37 +1,55 @@
-document.getElementById("findBtn").addEventListener("click", () => {
-    const postcode = document.getElementById("postcode").value.trim();
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = "";
+let mpData = [];
 
-    // UK postcode regex
-    const postcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+// Load CSV on startup
+fetch("mp_pcd_sector.csv")
+  .then(response => response.text())
+  .then(csvText => {
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        mpData = results.data; 
+        console.log("CSV loaded:", mpData.length);
+      }
+    });
+  });
 
-    // 1. Validate postcode
-    if (!postcodeRegex.test(postcode)) {
-        resultDiv.textContent = "Please enter a valid UK postcode.";
-        return;
-    }
+// Search button click
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const outcode = document.getElementById("postcodeInput").value.trim().toUpperCase();
+  if (!outcode) return;
 
-    // 2. Call real API
-    const url = `https://www.theyworkforyou.com/api/getMP?postcode=${encodeURIComponent(postcode)}&output=json`;
+  // Filter CSV for matching sector
+  const matches = mpData.filter(row => 
+    row["Postcode_Sector"] && 
+    row["Postcode_Sector"].startsWith(outcode)
+  );
 
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            if (!data || data.error) {
-                resultDiv.textContent = "No MP found for that postcode.";
-                return;
-            }
+  const select = document.getElementById("mpSelect");
+  select.innerHTML = ""; // clear out old options
 
-            resultDiv.innerHTML = `
-                <h2>${data.name}</h2>
-                <p><strong>Party:</strong> ${data.party}</p>
-                <p><strong>Constituency:</strong> ${data.constituency}</p>
-                <p><a href="${data.url}" target="_blank">View profile</a></p>
-            `;
-        })
-        .catch(err => {
-            resultDiv.textContent = "Error contacting lookup service.";
-            console.error(err);
-        });
+  if (matches.length === 0) {
+    select.innerHTML = "<option>No matches found</option>";
+  } else {
+    matches.forEach(row => {
+      const option = document.createElement("option");
+      option.value = row["Westminster Parliamentary Constituency Code (2024)"];
+      option.text = `${row["Constituency Name"]} — ${row["MP Name"]}`;
+      select.appendChild(option);
+    });
+  }
+
+  document.getElementById("resultSection").style.display = "block";
+});
+
+// Send / Generate email button
+document.getElementById("sendBtn").addEventListener("click", () => {
+  const select = document.getElementById("mpSelect");
+  const emailBody = document.getElementById("emailBody").value.trim();
+  const selectedOption = select.options[select.selectedIndex];
+  if (!selectedOption) return;
+
+  const mpName = selectedOption.text.split("—")[1]?.trim();
+  const mailtoLink = `mailto:?subject=Message to ${mpName}&body=${encodeURIComponent(emailBody)}`;
+  window.location.href = mailtoLink;
 });
