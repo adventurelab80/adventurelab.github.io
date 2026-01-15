@@ -30,7 +30,6 @@
 
 <div id="result">
     <select id="mpSelect"></select>
-
     <textarea id="emailBody" rows="6" placeholder="Write your message"></textarea>
     <button id="sendBtn">Email MP</button>
 </div>
@@ -48,38 +47,41 @@ fetch("mp_pcd_sector.csv")
             complete: (results) => {
                 mpData = results.data;
                 console.log("MP data loaded:", mpData.length);
-                console.log(mpData[0]); // log first row to check columns
+                console.log("First row sample:", mpData[0]);
             }
         });
     });
 
-// Convert postcode to sector
-function extractSector(postcode) {
-    const clean = postcode.toUpperCase().replace(/\s+/g, "");
+// Normalize postcode to sector (AA1 1)
+function normalizePostcode(input) {
+    if (!input) return "";
+    const clean = input.toUpperCase().replace(/\s+/g,"");
 
-    // Full postcode e.g. PE280LF
-    const full = clean.match(/^([A-Z]{1,2}\d{1,2})(\d)[A-Z]{2}$/);
-    if (full) return `${full[1]} ${full[2]}`;
+    // Match outward + first inward digit (sector)
+    const match = clean.match(/^([A-Z]{1,2}\d{1,2})(\d)/);
+    if (match) return `${match[1]} ${match[2]}`;
 
-    // Sector e.g. PE280 or PE28
-    const sector = clean.match(/^([A-Z]{1,2}\d{1,2})(\d?)$/);
-    if (sector) return sector[2] ? `${sector[1]} ${sector[2]}` : sector[1];
+    // Fallback if only outward code (e.g., CB7)
+    const fallback = clean.match(/^([A-Z]{1,2}\d{1,2})$/);
+    if (fallback) return fallback[1];
 
     return "";
 }
 
-// Find MP
+// Search for MP
 document.getElementById("searchBtn").addEventListener("click", () => {
     const input = document.getElementById("postcodeInput").value.trim();
     if (!input) return;
 
-    const sector = extractSector(input);
+    const sector = normalizePostcode(input);
     console.log("Searching for sector:", sector);
 
     const matches = mpData.filter(row => {
-        const csvSector = row["Postcode Sector"] || "";
-        return csvSector.toUpperCase().startsWith(sector);
+        const csvSector = (row["Postcode Sector"] || "").toUpperCase();
+        return csvSector.startsWith(sector); // case-insensitive, auto-normalized
     });
+
+    console.log("Matches found:", matches.length, matches);
 
     const select = document.getElementById("mpSelect");
     select.innerHTML = "";
