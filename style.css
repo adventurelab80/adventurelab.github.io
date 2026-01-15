@@ -31,11 +31,16 @@ label {
     color: #444;
 }
 
-input {
+input, select, textarea {
     padding: 12px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    font-family: inherit;
+}
+
+textarea {
+    resize: vertical;
 }
 
 button {
@@ -64,3 +69,4 @@ button:hover {
 #result h2 {
     margin-top: 0;
 }
+
