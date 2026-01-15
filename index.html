@@ -2,24 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Your MP</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <h1>Find Your MP</h1>
 
-    <div class="container">
-        <h1>Find Your MP</h1>
+    <label for="postcodeInput">Enter postcode outcode (e.g., AB1):</label>
+    <input type="text" id="postcodeInput" placeholder="AB1">
+    <button id="searchBtn">Search</button>
 
-        <div class="form-container">
-            <label for="postcode">Enter your postcode</label>
-            <input type="text" id="postcode" placeholder="e.g. SW1A 1AA">
-            <button id="findBtn">Find MP</button>
-        </div>
+    <div id="resultSection" style="display:none;">
+        <h2>Select your constituency/MP</h2>
+        <select id="mpSelect"></select>
 
-        <div id="result"></div>
+        <h3>Email your MP</h3>
+        <textarea id="emailBody" placeholder="Your message here"></textarea>
+        <button id="sendBtn">Generate Email</button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.2.0/papaparse.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
+
