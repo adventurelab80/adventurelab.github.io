@@ -37,17 +37,28 @@
 <script>
 let mpData = [];
 
-// Load CSV
+// Load CSV with trimmed headers & values
 fetch("mp_pcd_sector.csv")
     .then(res => res.text())
     .then(csv => {
         Papa.parse(csv, {
             header: true,
             skipEmptyLines: true,
+            trimHeaders: true,
             complete: (results) => {
-                mpData = results.data;
+                // Trim all values in each row to remove hidden spaces
+                mpData = results.data.map(row => {
+                    const trimmedRow = {};
+                    for (let key in row) {
+                        if (row.hasOwnProperty(key)) {
+                            trimmedRow[key.trim()] = (row[key] || "").trim();
+                        }
+                    }
+                    return trimmedRow;
+                });
+
                 console.log("MP data loaded:", mpData.length);
-                console.log("First row sample:", mpData[0]);
+                console.log("Sample row:", mpData[0]);
             }
         });
     });
@@ -55,7 +66,7 @@ fetch("mp_pcd_sector.csv")
 // Normalize postcode to sector (AA1 1)
 function normalizePostcode(input) {
     if (!input) return "";
-    const clean = input.toUpperCase().replace(/\s+/g,"");
+    const clean = input.toUpperCase().replace(/\s+/g, "");
 
     // Match outward + first inward digit (sector)
     const match = clean.match(/^([A-Z]{1,2}\d{1,2})(\d)/);
@@ -78,7 +89,7 @@ document.getElementById("searchBtn").addEventListener("click", () => {
 
     const matches = mpData.filter(row => {
         const csvSector = (row["Postcode Sector"] || "").toUpperCase();
-        return csvSector.startsWith(sector); // case-insensitive, auto-normalized
+        return csvSector.startsWith(sector);
     });
 
     console.log("Matches found:", matches.length, matches);
@@ -91,7 +102,7 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     } else {
         matches.forEach(row => {
             const opt = document.createElement("option");
-            opt.value = row["Email"]; // store email for mailto
+            opt.value = row["Email"];
             opt.textContent = `${row["Constituency"]} — ${row["NameDisplay"]}`;
             select.appendChild(opt);
         });
